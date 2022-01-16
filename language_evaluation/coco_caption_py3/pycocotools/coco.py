@@ -54,7 +54,6 @@ import copy
 
 import os
 import sys
-sys.setdefaultencoding('utf8')
 import jieba
 import hashlib
 

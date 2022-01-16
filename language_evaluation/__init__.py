@@ -8,6 +8,7 @@ import abc
 import shutil
 from tempfile import mkdtemp
 import json
+import jieba
 
 import numpy as np
 import more_itertools
@@ -102,6 +103,8 @@ class CocoEvaluator(Evaluator):
 
             ann['images'].append({'id': i})
             for answer_cap in answer_caps:
+                w = jieba.cut(answer_cap.strip().replace('。',''), cut_all=False)
+                answer_cap = ' '.join(w)
                 ann['annotations'].append({'caption': answer_cap, 'id': i, 'image_id': i})
             coco_res.append({'caption': predict, 'id': i, 'image_id': i})
 
