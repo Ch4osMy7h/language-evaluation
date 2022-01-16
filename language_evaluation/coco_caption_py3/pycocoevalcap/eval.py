@@ -10,8 +10,7 @@ _COCO_TYPE_TO_METRIC = {
     "BLEU": (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
     "METEOR": (Meteor(), "METEOR"),
     "ROUGE_L": (Rouge(), "ROUGE_L"),
-    "CIDEr": (Cider(), "CIDEr"),
-    "SPICE": (Spice(), "SPICE"),
+    "CIDEr": (Cider(), "CIDEr")
 }
 
 class COCOEvalCap:

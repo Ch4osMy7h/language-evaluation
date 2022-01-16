@@ -12,6 +12,7 @@ install_requires = [
     'absl-py',
     'nltk',
     'six',
+    'jieba'
     # For pyrouge
     'more_itertools',
     # etc

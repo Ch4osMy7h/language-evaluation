@@ -1,6 +1,8 @@
-__author__ = 'tylin_change_by_chaosmyth'
+# coding: utf-8
+
+__author__ = 'tylin_change_by_ZhengHe'
 __version__ = '1.0.1'
-# Interface for accessing the Microsoft COCO dataset.
+# Interface for accessing the Microsoft COCO and AI dataset.
 
 # Microsoft COCO is a large image dataset designed for object detection,
 # segmentation, and caption generation. pycocotools is a Python API that
@@ -41,6 +43,7 @@ __version__ = '1.0.1'
 # Microsoft COCO Toolbox.      Version 1.0
 # Data, paper, and tutorials available at:  http://mscoco.org/
 # Code written by Piotr Dollar and Tsung-Yi Lin, 2014.
+# change by Zheng He, 2017
 # Licensed under the Simplified BSD License [see bsd.txt]
 
 import json
@@ -51,9 +54,9 @@ from matplotlib.patches import Polygon
 import numpy as np
 from skimage.draw import polygon
 import copy
-
 import os
 import sys
+reload(sys)
 sys.setdefaultencoding('utf8')
 import jieba
 import hashlib
@@ -73,27 +76,36 @@ class COCO:
         self.catToImgs = {}
         self.imgs = []
         self.cats = []
+        self.image2hash = {}
         if not annotation_file == None:
-            print("loading annotations into memory...")
+            print('loading annotations into memory...')
             time_t = datetime.datetime.utcnow()
-            #dataset = json.load(open(annotation_file, 'r'))
-            dataset = annotation_file
-            print(datetime.datetime.utcnow() - time_t)
+            dataset = json.load(open(annotation_file, 'r'))
+
+            print( datetime.datetime.utcnow() - time_t)
             self.dataset = dataset
             self.createIndex()
 
     def createIndex(self):
         # create index
-        print("creating index...")
+        print ('creating index...')
         imgToAnns = {ann['image_id']: [] for ann in self.dataset['annotations']}
         anns =      {ann['id']:       [] for ann in self.dataset['annotations']}
+
         for ann in self.dataset['annotations']:
             imgToAnns[ann['image_id']] += [ann]
-            anns[ann['id']] = ann
 
+            anns[ann['id']] = ann
         imgs      = {im['id']: {} for im in self.dataset['images']}
+        image2hash = {}
         for img in self.dataset['images']:
             imgs[img['id']] = img
+            if img['file_name'] in image2hash:
+                assert image2hash[img['file_name']] == img['id']
+            else:
+                image2hash[img['file_name']] = img['id']
+        self.image2hash = image2hash
+
 
         cats = []
         catToImgs = []
@@ -105,7 +117,7 @@ class COCO:
             for ann in self.dataset['annotations']:
                 catToImgs[ann['category_id']] += [ann['image_id']]
 
-        print("index created!")
+        print ('index created!')
 
         # create class members
         self.anns = anns
@@ -120,7 +132,7 @@ class COCO:
         :return:
         """
         for key, value in self.datset['info'].items():
-            print("{}: {}".format(key, value))
+            print( '%s: %s'%(key, value))
 
     def getAnnIds(self, imgIds=[], catIds=[], areaRng=[], iscrowd=None):
         """
@@ -263,10 +275,11 @@ class COCO:
             ax.add_collection(p)
         if self.dataset['type'] == 'captions':
             for ann in anns:
-                print(ann['caption'])
+                print( ann['caption'])
 
     def loadRes(self, resFile):
         """
+        change by ZhengHe
         Load result file and return a result api object.
         :param   resFile (str)     : file name of result file
         :return: res (obj)         : result api object
@@ -277,13 +290,34 @@ class COCO:
         res.dataset['type'] = copy.deepcopy(self.dataset['type'])
         res.dataset['licenses'] = copy.deepcopy(self.dataset['licenses'])
 
-        print("Loading and preparing results...     ")
+        # str to hex int for image_id
+        imgdict = {}
+        def get_image_dict(img_name):
+            # image_hash = int(int(hashlib.sha256(img_name).hexdigest(), 16) % sys.maxint)
+            image_hash = self.image2hash[img_name]
+            if image_hash in imgdict:
+                assert imgdict[image_hash] == img_name, 'hash colision: {0}: {1}'.format(image_hash, img_name)
+            else:
+                imgdict[image_hash] = img_name
+            image_dict = {"id": image_hash,
+                          "width": 0,
+                          "height": 0,
+                          "file_name": img_name,
+                          "license": '',
+                          "url": img_name,
+                          "date_captured": '',
+                          }
+            return image_hash
+
+
+        print ('Loading and preparing results...     ')
         time_t = datetime.datetime.utcnow()
-        #anns    = json.load(open(resFile))
-        anns    = resFile
+        anns    = json.load(open(resFile))
+
         assert type(anns) == list, 'results in not an array of objects'
-        annsImgIds = [ann['image_id'] for ann in anns]
-        # change by chaosmyth
+
+        # annsImgIds = [ann['image_id'] for ann in anns]
+        # change by ZhengHe
         annsImgIds = []
         for ann in anns:
             assert ann['image_id'] != '','image_id must have a name'
@@ -292,6 +326,9 @@ class COCO:
             w = jieba.cut(ann['caption'].strip().replace('。',''), cut_all=False)
             p = ' '.join(w)
             ann['caption'] = p
+            ann['image_id'] = get_image_dict(ann['image_id'])
+            annsImgIds.append((ann['image_id']))
+
 
         assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), \
                'Results do not correspond to current coco set'
@@ -316,7 +353,7 @@ class COCO:
                 ann['bbox'] = []
                 ann['id'] = id
                 ann['iscrowd'] = 0
-                print("DONE (t={:2}s)".format((datetime.datetime.utcnow() - time_t).total_seconds()))
+        print( 'DONE (t=%0.2fs)'%((datetime.datetime.utcnow() - time_t).total_seconds()))
 
         res.dataset['annotations'] = anns
         res.createIndex()
