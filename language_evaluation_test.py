@@ -12,7 +12,7 @@ import language_evaluation
 
 pprint = PrettyPrinter().pprint
 SAMPLE_PREDICTIONS = ['我只是一个测试语句']
-SAMPLE_ANSWERS = ['我只是一个测试语句']
+SAMPLE_ANSWERS = ['我只是一个语句']
 
 class TestExample(unittest.TestCase):
     """ Basic uint test.  """

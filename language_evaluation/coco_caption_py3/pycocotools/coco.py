@@ -283,7 +283,6 @@ class COCO:
         assert type(anns) == list, 'results in not an array of objects'
         annsImgIds = [ann['image_id'] for ann in anns]
         # change by chaosmyth
-        annsImgIds = []
         for ann in anns:
             assert ann['image_id'] != '','image_id must have a name'
             assert ann['caption'] != '', 'caption must be a string'
